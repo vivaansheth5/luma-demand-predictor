@@ -7,13 +7,16 @@ __pycache__/
 .ruff_cache/
 build/
 
-# Pipeline outputs (regenerate with `demand-agent run`)
+# Pipeline outputs (regenerate with `luma run`) and your own tables
 /data/
 /artifacts/
+/artifacts-own/
+/my-brand/
 
 # Web
 web/node_modules/
 web/dist/
 web/dist-single/
 
+.vercel/
 .DS_Store

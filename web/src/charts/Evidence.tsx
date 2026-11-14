@@ -2,7 +2,7 @@ import { useState } from "react";
 import { scaleLinear } from "d3-scale";
 import { line } from "d3-shape";
 import { color } from "../theme";
-import { inr, int, pct } from "../format";
+import { money, int, pct } from "../format";
 import type { PolicyResult } from "../types";
 import { axisNumber, Plot, TipRow, YGrid, type Tip } from "./base";
 import { roundedBar } from "./DemandChart";
@@ -41,8 +41,8 @@ export function Frontier({ results, height = 380 }: { results: PolicyResult[]; h
                     <>
                       <div className="tt-title">{r.name}</div>
                       <TipRow label="Fill rate" value={pct(r.fill_rate, 1)} />
-                      <TipRow label="Average stock" value={inr(r.avg_stock_value)} />
-                      <TipRow label="Lost revenue" value={inr(r.lost_revenue)} />
+                      <TipRow label="Average stock" value={money(r.avg_stock_value)} />
+                      <TipRow label="Lost revenue" value={money(r.lost_revenue)} />
                     </>
                   ),
                 })
@@ -70,7 +70,7 @@ export function Frontier({ results, height = 380 }: { results: PolicyResult[]; h
             <path d={path(sweep) ?? ""} fill="none" stroke={color.accent} strokeWidth={2} strokeLinejoin="round" />
             {baseline.map((r) => point(r, color.quiet))}
             {sweep.map((r) => point(r, color.accent))}
-            {agent && point(agent, color.maroon, true)}
+            {agent && point(agent, color.brand, true)}
             {today && (
               <text className="label" x={x(today.avg_stock_value / 1e5) + 9} y={y(today.fill_rate) + 15}>
                 Status quo today ({today.dial})
@@ -84,11 +84,11 @@ export function Frontier({ results, height = 380 }: { results: PolicyResult[]; h
             {agent &&
               (x(agent.avg_stock_value / 1e5) > m.left + 150 ? (
                 <text className="strong halo" x={x(agent.avg_stock_value / 1e5) - 12} y={y(agent.fill_rate) - 10} textAnchor="end">
-                  Agent with transfers
+                  Luma with transfers
                 </text>
               ) : (
                 <text className="strong halo" x={x(agent.avg_stock_value / 1e5) - 4} y={y(agent.fill_rate) - 14}>
-                  Agent with transfers
+                  Luma with transfers
                 </text>
               ))}
           </svg>
@@ -208,7 +208,7 @@ export function LostDemand({ truth, sales, estimate, weeks, height = 280 }: { tr
                     <>
                       <div className="tt-title">Week ending {weeks[i]}</div>
                       <TipRow color={color.quiet} label="Truly lost" value={`${int(lost[i])} units`} />
-                      <TipRow color="#E58DA0" label="Estimated" value={`${int(found[i])} units`} />
+                      <TipRow color="#A5A0EC" label="Estimated" value={`${int(found[i])} units`} />
                     </>
                   ),
                 });

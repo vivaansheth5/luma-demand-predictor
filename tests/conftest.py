@@ -6,9 +6,9 @@ import warnings
 
 import pytest
 
-from demand_agent.config import small_settings
-from demand_agent.run import run_pipeline
-from demand_agent.sim.world import generate_world
+from luma.config import small_settings
+from luma.run import run_pipeline
+from luma.sim.world import generate_world
 
 warnings.filterwarnings("ignore", category=UserWarning)
 

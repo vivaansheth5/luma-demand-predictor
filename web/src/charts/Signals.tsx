@@ -75,8 +75,8 @@ export function QuotientGrid({ rows, columns, values }: { rows: string[]; column
                               </div>
                               <div>
                                 {Math.abs(v - 1) < 0.03
-                                  ? "Sells at the city average."
-                                  : `Sells ${Math.abs(Math.round((v - 1) * 100))}% ${v > 1 ? "more" : "less"} than the city average, as a share of the store's demand.`}
+                                  ? "Sells at the average of all stores."
+                                  : `Sells ${Math.abs(Math.round((v - 1) * 100))}% ${v > 1 ? "more" : "less"} than the average of all stores, as a share of the store's demand.`}
                               </div>
                             </>
                           ),
@@ -185,7 +185,7 @@ export function AnomalyChart({ dates, actual, expected, anomalies, events, heigh
         const path = (vals: number[]) => line<number>().defined((d) => d > 0).x((_, i) => x(i)).y((d) => y(d))(vals) ?? "";
         const ticks = dates.map((d, i) => ({ i, d })).filter(({ d }) => d.endsWith("-01") || d.endsWith("-15"));
         return (
-          <svg width={width} height={height} role="img" aria-label="Daily city demand against expectation">
+          <svg width={width} height={height} role="img" aria-label="Daily total demand against expectation">
             <YGrid scale={y} left={m.left} right={width - m.right} ticks={y.ticks(4)} format={axisNumber} />
             {ticks.map(({ i, d }) => (
               <text key={i} x={x(i)} y={height - 7} textAnchor="middle">

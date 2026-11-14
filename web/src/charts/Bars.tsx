@@ -7,7 +7,7 @@ import { roundedBarH } from "./DemandChart";
 
 /**
  * What moves a forecast away from the run-rate, one bar per driver.
- * Polarity is the message, so the bars diverge from zero: maroon lifts, blue lowers.
+ * Polarity is the message, so the bars diverge from zero: indigo lifts, ember lowers.
  */
 export function DriverBars({ names, factors }: { names: string[]; factors: number[] }) {
   const rows = names

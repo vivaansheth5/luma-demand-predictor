@@ -1,15 +1,18 @@
 import { useState } from "react";
 import { color, riskColor } from "../theme";
-import { inr, int, signedPct } from "../format";
+import { money, int, signedPct } from "../format";
 import type { Lane, Store } from "../types";
 import { Plot, TipRow, type Tip } from "./base";
 
 /**
  * The store network drawn to scale from coordinates.
  * Circle area is forecast demand, shade is the number of sizes likely to sell out this week,
- * and each arrow is a transfer lane in tonight's plan.
+ * and each arrow is a transfer lane in the plan.
  */
-export function StoreMap({ stores, lanes: allLanes, height: maxHeight = 380, maxLanes }: { stores: Store[]; lanes: Lane[]; height?: number; maxLanes?: number }) {
+type Placed = Store & { lat: number; lon: number };
+
+export function StoreMap({ stores: all, lanes: allLanes, height: maxHeight = 380, maxLanes }: { stores: Store[]; lanes: Lane[]; height?: number; maxLanes?: number }) {
+  const stores = all.filter((s): s is Placed => s.lat !== null && s.lon !== null);
   const lanes = maxLanes ? [...allLanes].sort((a, b) => b.units - a.units).slice(0, maxLanes) : allLanes;
   const [tip, setTip] = useState<Tip | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
@@ -31,11 +34,11 @@ export function StoreMap({ stores, lanes: allLanes, height: maxHeight = 380, max
         );
         const ox = pad.left + (width - pad.left - pad.right - (x1 - x0) * scale) / 2;
         const oy = pad.top + (height - pad.top - pad.bottom - (y1 - y0) * scale) / 2;
-        const px = (s: Store) => ox + (s.lon * kx - x0) * scale;
-        const py = (s: Store) => oy + (y1 - s.lat) * scale;
+        const px = (s: Placed) => ox + (s.lon * kx - x0) * scale;
+        const py = (s: Placed) => oy + (y1 - s.lat) * scale;
         const maxDemand = Math.max(...stores.map((s) => s.forecast28));
-        const maxRisk = Math.max(...stores.map((s) => s.riskCells), 1);
-        const radius = (s: Store) => (compact ? 0.6 : 1) * (7 + 15 * Math.sqrt(s.forecast28 / maxDemand));
+        const maxRisk = Math.max(...stores.map((s) => s.riskCells ?? 0), 1);
+        const radius = (s: Placed) => (compact ? 0.6 : 1) * (7 + 15 * Math.sqrt(s.forecast28 / maxDemand));
         const byName = new Map(stores.map((s) => [s.name, s]));
         const maxUnits = Math.max(...lanes.map((l) => l.units), 1);
         const kmPx = (scale / 111.32) * 5; // five kilometres in pixels
@@ -47,7 +50,7 @@ export function StoreMap({ stores, lanes: allLanes, height: maxHeight = 380, max
         const circles: Box[] = stores.map((s) => [px(s) - radius(s) - 3, py(s) - radius(s) - 3, px(s) + radius(s) + 3, py(s) + radius(s) + 3]);
         const taken: Box[] = [];
         const labelAt = new Map<string, Spot>();
-        const crowding = (s: Store) => stores.filter((o) => Math.hypot(px(o) - px(s), py(o) - py(s)) < 110).length;
+        const crowding = (s: Placed) => stores.filter((o) => Math.hypot(px(o) - px(s), py(o) - py(s)) < 110).length;
         [...stores]
           .sort((a, b) => crowding(b) - crowding(a))
           .forEach((s) => {
@@ -81,7 +84,7 @@ export function StoreMap({ stores, lanes: allLanes, height: maxHeight = 380, max
           });
 
         return (
-          <svg width={width} height={height} role="img" aria-label="Map of dark stores with tonight's transfer lanes">
+          <svg width={width} height={height} role="img" aria-label="Map of stores with the plan's transfer lanes">
             <defs>
               <marker id="arrow" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
                 <path d="M0.5,0.8L7,4L0.5,7.2" fill="none" stroke={color.accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -136,7 +139,7 @@ export function StoreMap({ stores, lanes: allLanes, height: maxHeight = 380, max
                             </div>
                             <TipRow label="Units" value={int(lane.units)} />
                             <TipRow label="Distance" value={`${lane.km.toFixed(1)} km`} />
-                            <TipRow label="Cost" value={inr(lane.cost)} />
+                            <TipRow label="Cost" value={money(lane.cost)} />
                           </>
                         ),
                       });
@@ -163,8 +166,8 @@ export function StoreMap({ stores, lanes: allLanes, height: maxHeight = 380, max
                       </div>
                       <TipRow label="Forecast, next 28 days" value={`${int(s.forecast28)} units`} />
                       <TipRow label="Against last 28 days" value={signedPct(s.forecast28 / Math.max(s.demand28, 1) - 1)} />
-                      <TipRow label="Stock on hand" value={`${int(s.stockUnits)} units`} />
-                      <TipRow label="Sizes likely to sell out" value={int(s.riskCells)} />
+                      {s.stockUnits !== null && <TipRow label="Stock on hand" value={`${int(s.stockUnits)} units`} />}
+                      {s.riskCells !== null && <TipRow label="Sizes likely to sell out" value={int(s.riskCells)} />}
                     </>
                   ),
                 });
@@ -176,7 +179,7 @@ export function StoreMap({ stores, lanes: allLanes, height: maxHeight = 380, max
               return (
                 <g key={s.id} tabIndex={0} onPointerEnter={show} onPointerLeave={hide} onFocus={show} onBlur={hide} style={{ outline: "none" }}>
                   <circle cx={cx} cy={cy} r={Math.max(r + 6, 14)} fill="transparent" />
-                  <circle cx={cx} cy={cy} r={r} fill={riskColor(0.12 + 0.88 * (s.riskCells / maxRisk))} stroke="#fff" strokeWidth={2} />
+                  <circle cx={cx} cy={cy} r={r} fill={riskColor(0.12 + 0.88 * ((s.riskCells ?? 0) / maxRisk))} stroke="#fff" strokeWidth={2} />
                   {focus === s.name && <circle cx={cx} cy={cy} r={r + 3} fill="none" stroke={color.ink} strokeWidth={1.5} />}
                   <text className="strong halo" x={at.x} y={at.y} textAnchor={at.anchor}>
                     {s.name}

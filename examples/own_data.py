@@ -1,52 +1,51 @@
-"""Run the agent on your own tables.
+"""Run Luma on your own tables from Python.
 
-The pipeline needs one object, a ``Panel``, built from long tables with the schemas listed in
-the README. This script loads a panel from a folder of Parquet files, trains and calibrates the
-forecaster, runs the agent, and writes the plan. Nothing here touches the simulator's truth.
+The command line does the same thing (``luma run --data my-brand``); use this when you want
+the results as objects. A folder needs ``sales.csv`` and ``catalog.csv``; ``luma init`` writes
+starter files and a column guide. To try it without your own data:
 
-Try it on simulated tables first:
-
-    demand-agent simulate --small --out data
+    luma simulate --small --csv --out data
     python examples/own_data.py data
 """
 
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
-import pandas as pd
-
-from demand_agent.agent.loop import run_agent
-from demand_agent.agent.workspace import build_workspace
-from demand_agent.config import Settings, small_settings
-from demand_agent.data.panel import Panel
-from demand_agent.models.pipeline import rolling_forecasts
+from luma.config import Settings
+from luma.data.loader import load_panel
+from luma.export import write_outputs
+from luma.run import policy_for, run_pipeline
 
 
-def main(folder: Path, small: bool) -> None:
-    settings = small_settings() if small else Settings()
-    panel = Panel.load(folder)
-    print(f"Loaded {panel.n_days} days, {panel.n_stores} stores, {panel.n_skus} products (as of {panel.asof}).")
+def main(folder: Path) -> None:
+    panel = load_panel(folder)  # pass currency="EUR", lead_time=10 and so on to override the defaults
+    print(f"Loaded {panel.n_days} days, {panel.n_stores} store(s), {panel.n_skus} products (as of {panel.asof}).")
 
-    # Replays earlier forecast dates to calibrate intervals, then forecasts from the latest day.
-    rolling = rolling_forecasts(panel, settings.model, progress=print)
-    live = rolling.live
+    # The money settings ship at demo scale; this sizes the budget and approval limit to your data.
+    settings = Settings()
+    settings = replace(settings, policy=policy_for(panel, settings.policy))
 
-    workspace = build_workspace(panel, settings, live.uncensored, rolling.model, live.forecast)
-    run = run_agent(workspace, mode="auto")  # Claude drives the tools when ANTHROPIC_API_KEY is set
+    # Replays earlier dates to calibrate the ranges, forecasts from the latest day, runs the agent.
+    result = run_pipeline(settings, mode="auto", panel=panel, progress=print)
 
-    print(f"\n{run.brief['headline']}")
-    for step in run.steps:
+    print(f"\n{result.agent.brief['headline']}")
+    for step in result.agent.steps:
         print(f"  {step.index:>2}. {step.tool}: {step.observation}")
-    if workspace.committed:
-        orders = pd.DataFrame(workspace.committed["orders"])
-        orders.to_csv("orders.csv", index=False)
-        pd.DataFrame(workspace.committed["transfers"]).to_csv("transfers.csv", index=False)
-        print(f"\nWrote {len(orders)} order lines to orders.csv and the transfer list to transfers.csv.")
+
+    rising = [t for t in result.workspace.trends if t.status in ("Rising", "Emerging")]
+    for t in rising:
+        print(
+            f"  {t.attribute} {t.value}: {t.status.lower()}, share {t.change_4w:+.0%} in four weeks (q={t.q_value:.3f})"
+        )
+
+    paths = write_outputs(result, Path("artifacts"))
+    print(f"\nWrote {', '.join(p.name for p in paths.values())} to artifacts/.")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        raise SystemExit("usage: python examples/own_data.py <folder with parquet tables> [--full]")
-    main(Path(sys.argv[1]), small="--full" not in sys.argv)
+        raise SystemExit("usage: python examples/own_data.py <folder with sales.csv and catalog.csv>")
+    main(Path(sys.argv[1]))

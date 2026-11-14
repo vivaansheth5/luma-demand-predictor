@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { rupees, type Model } from "../data";
+import type { Model } from "../data";
 
 const KIND: Record<string, string> = {
   draft_plan: "plan",
@@ -34,7 +34,7 @@ export function Trace({ m }: { m: Model }) {
   return (
     <>
       <header className="view-head">
-        <h1>How the agent decided</h1>
+        <h1>How Luma decided</h1>
         <p>
           Every run is recorded: what the agent was thinking, which tool it called, and what came back. What it looks at
           and how often it redrafts depend on what the tools return.{" "}
@@ -48,7 +48,7 @@ export function Trace({ m }: { m: Model }) {
         <div>
           <div className="block-head">
             <h2>
-              {total} steps, {agent.status === "committed" ? "plan committed" : "stopped for a person"}
+              {total} steps, {agent.status === "committed" ? "plan committed" : agent.status === "forecast_only" ? "forecast and trends, no stock to plan" : "stopped for a person"}
             </h2>
             <button className="btn ghost" onClick={replay} disabled={playing}>
               {playing ? "Replaying" : "Replay the run"}
@@ -59,14 +59,14 @@ export function Trace({ m }: { m: Model }) {
               <li key={s.n} className={`step kind-${KIND[s.tool] ?? "read"}${i >= shown ? " hidden" : ""}${playing && i === shown - 1 ? " entering" : ""}`}>
                 <div className="step-n">{s.n}</div>
                 <div>
-                  <p className="step-thought">{rupees(s.thought)}</p>
+                  <p className="step-thought">{s.thought}</p>
                   <div className="step-call">
                     <code>
                       {s.tool}({Object.entries(s.args).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ")})
                     </code>
                     <span>{s.seconds < 0.1 ? "under 0.1s" : `${s.seconds.toFixed(1)}s`}</span>
                   </div>
-                  <p className="step-obs">{rupees(s.observation)}</p>
+                  <p className="step-obs">{s.observation}</p>
                 </div>
               </li>
             ))}

@@ -1,4 +1,4 @@
-// Shape of artifacts/dashboard.json, written by demand_agent.export.
+// Shape of artifacts/dashboard.json, written by luma.export.
 
 export interface Band {
   mean: number[];
@@ -9,16 +9,16 @@ export interface Band {
 export interface Store {
   id: string;
   name: string;
-  lat: number;
-  lon: number;
+  lat: number | null;
+  lon: number | null;
   weeksOpen: number;
   demand28: number;
   sales28: number;
   forecast28: number;
   revenue28: number;
-  stockUnits: number;
-  stockValue: number;
-  riskCells: number;
+  stockUnits: number | null;
+  stockValue: number | null;
+  riskCells: number | null;
   history: number[];
   forecast: Band;
   lqCategory: number[];
@@ -39,16 +39,15 @@ export interface Sku {
   id: string;
   name: string;
   category: string;
-  subtype: string;
-  style: string;
-  color: string;
-  fit: string;
-  label: string;
+  /** Catalog attributes by column name, such as style, color or fabric. */
+  attributes: Record<string, string>;
+  /** This product's value of the trend attribute. */
+  trendValue: string | null;
   price: number;
   weeksLive: number;
   demand28: number;
   forecast28: number;
-  trend: string;
+  trend: string | null;
 }
 
 export interface Pair {
@@ -68,15 +67,16 @@ export interface Pair {
   cumMean: number[];
   cumP90: number[];
   drivers: number[];
-  stock: number[];
-  inbound: number[];
   share: number[];
   exp14: number[];
-  risk14: number[];
-  riskWeek: number[];
-  riskAfter: number[];
-  order: number[];
-  cover: number | null;
+  /** The stock fields are present only when the run had a stock table. */
+  stock?: number[];
+  inbound?: number[];
+  risk14?: number[];
+  riskWeek?: number[];
+  riskAfter?: number[];
+  order?: number[];
+  cover?: number | null;
 }
 
 export interface Risk {
@@ -242,10 +242,12 @@ export type MethodTable = Record<string, { wape: number; bias: number }>;
 
 export interface ForecastEval {
   methods: string[];
+  /** What forecasts were scored against: true demand (simulation), stockout-corrected sales, or actual sales. */
+  against: string;
   overall: MethodTable;
-  noise_floor: number;
-  skill_vs_trailing: number;
-  skill_vs_in_stock: number;
+  noise_floor: number | null;
+  skill_vs_trailing: number | null;
+  skill_vs_in_stock: number | null;
   by_window: Record<string, Record<string, number>>;
   by_category: Record<string, Record<string, number>>;
   by_store: Record<string, Record<string, number>>;
@@ -262,38 +264,43 @@ export interface ForecastEval {
 }
 
 export interface Evaluation {
-  forecast: ForecastEval;
+  /** Null when the history is too short to replay an earlier forecast. */
+  forecast: ForecastEval | null;
+  /** Scored against simulator truth when present; on real data only the share and uplift are known. */
   uncensoring: {
     censored_share: number;
-    true_lost_units: number;
-    recovered_units: number;
-    recovery_ratio: number;
-    bias_sales: number;
-    bias_uncensored: number;
-    bias_sales_last_28d: number;
-    bias_uncensored_last_28d: number;
-    weekly_true: number[];
-    weekly_sales: number[];
-    weekly_estimate: number[];
-  };
+    uplift?: number;
+    true_lost_units?: number;
+    recovered_units?: number;
+    recovery_ratio?: number;
+    bias_sales?: number;
+    bias_uncensored?: number;
+    bias_sales_last_28d?: number;
+    bias_uncensored_last_28d?: number;
+    weekly_true?: number[];
+    weekly_sales?: number[];
+    weekly_estimate?: number[];
+  } | null;
   size_curves: {
     buckets: { bucket: string; pairs: number; raw_mae: number; pooled_mae: number }[];
     concentration: Record<string, number>;
-  };
-  trends: {
+  } | null;
+  trends:
+    | {
     style: string;
     status: string;
     detected_change_4w: number;
     slope_pct_per_week: number;
     q_value: number;
     buzz_momentum: number | null;
-    true_change_8w: number;
-    true_change_next_4w: number;
-  }[];
+        true_change_8w: number;
+        true_change_next_4w: number;
+      }[]
+    | null;
   anomalies: Record<
     string,
     { injected: number; detected: number; recall: number | null; unexplained_flags: number; precision: number | null }
-  >;
+  > | null;
   policy: {
     horizon_days: number;
     weekly_budget: number;
@@ -333,6 +340,7 @@ export interface Finding {
 export interface Agent {
   mode: "rules" | "llm";
   model: string | null;
+  /** "committed", "needs_human", or "forecast_only" when the run had no stock table. */
   status: string;
   seconds: number;
   brief: { headline: string; findings: Finding[]; stats: Record<string, number>; narrative: string | null };
@@ -344,7 +352,21 @@ export interface Dashboard {
   meta: {
     asOf: string;
     horizonDays: number;
-    seed: number;
+    /** Name shown beside the wordmark. */
+    brand: string;
+    currency: string;
+    /** "simulated" for the demo world, "tables" for a brand's own data. */
+    source: string;
+    /** True when the run has simulator truth to score against. */
+    simulated: boolean;
+    hasStock: boolean;
+    hasStockHistory: boolean;
+    hasMap: boolean;
+    hasBuzz: boolean;
+    canTransfer: boolean;
+    trendAttribute: string | null;
+    attributes: string[];
+    seed: number | null;
     counts: { stores: number; skus: number; sizes: number; days: number; pairs: number; salesRows: number };
     model: {
       features: number;
@@ -361,6 +383,7 @@ export interface Dashboard {
       approvalThreshold: number;
       leadTimeDays: number;
       protectionDays: number;
+      laneCapacity: number;
     };
     sizes: string[];
     styles: string[];
@@ -372,13 +395,17 @@ export interface Dashboard {
     demand: number[];
     forecast: Band;
     events: { week: number; name: string }[];
+    /** Totals over the last and next 28 days, across every store and product. */
+    demand28: number;
+    forecast28: number;
+    revenue28: number;
   };
   categories: Category[];
   stores: Store[];
   skus: Sku[];
   pairs: Pair[];
   risks: Risk[];
-  riskWeek: { cells: number; lostRevenue: number; pairs: number };
+  riskWeek: { cells: number; lostRevenue: number; pairs: number } | null;
   overstock: Overstock[];
   plan: Plan;
   trends: Trend[];

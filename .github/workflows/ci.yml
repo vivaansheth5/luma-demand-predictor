@@ -21,8 +21,14 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: pytest
-      - name: Run the whole pipeline on the tiny world
-        run: demand-agent run --small --out artifacts
+      - name: Run the whole pipeline on the tiny demo
+        run: luma run --small --out artifacts
+      - name: Run it again from CSV tables, as a brand would
+        run: |
+          luma simulate --small --csv --out data
+          rm -r data/truth
+          luma run --data data --out artifacts-own --brand "CI brand"
+          luma trends --artifacts artifacts-own
 
   web:
     runs-on: ubuntu-latest

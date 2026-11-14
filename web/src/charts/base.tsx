@@ -172,7 +172,7 @@ export function YGrid({
     <g>
       {ticks.map((t) => (
         <g key={t} transform={`translate(0,${scale(t)})`}>
-          <line x1={left} x2={right} stroke={t === 0 ? "#CFC7CA" : "#ECE7E9"} />
+          <line x1={left} x2={right} stroke={t === 0 ? "#CBCAD8" : "#EAEAF0"} />
           <text x={left - 8} dy="0.32em" textAnchor="end">
             {format(t)}
           </text>

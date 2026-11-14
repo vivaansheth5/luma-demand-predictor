@@ -3,13 +3,13 @@ from dataclasses import replace
 import numpy as np
 from scipy.stats import nbinom, poisson
 
-from demand_agent.config import QUANTILES, WINDOWS
-from demand_agent.evaluation.backtest import LAST_WEEK, MODEL, ORACLE
-from demand_agent.features.build import DRIVER_GROUPS, FeatureBuilder, feature_groups
-from demand_agent.models.gbm import CalibrationSet
-from demand_agent.models.pipeline import expected_shortage, nb_ppf, nb_sf
-from demand_agent.models.sizecurve import fit_concentration, fit_size_curves
-from demand_agent.models.uncensor import conditional_mean_at_least, uncensor
+from luma.config import QUANTILES, WINDOWS
+from luma.evaluation.backtest import LAST_WEEK, MODEL, ORACLE
+from luma.features.build import DRIVER_GROUPS, FeatureBuilder, feature_groups
+from luma.models.gbm import CalibrationSet
+from luma.models.pipeline import expected_shortage, nb_ppf, nb_sf
+from luma.models.sizecurve import fit_concentration, fit_size_curves
+from luma.models.uncensor import conditional_mean_at_least, uncensor
 
 
 def test_conditional_mean_matches_brute_force():

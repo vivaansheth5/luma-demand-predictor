@@ -1,3 +1,4 @@
+import { setCurrency } from "./format";
 import type { Dashboard, Pair } from "./types";
 
 declare global {
@@ -14,6 +15,10 @@ export interface Model {
   skuIndex: (id: string) => number;
   /** Week-ending dates of the history weeks, then the four forecast weeks. */
   weeks: string[];
+  /** What this run's data supports. */
+  has: { stock: boolean; stockHistory: boolean; map: boolean; buzz: boolean; transfers: boolean; truth: boolean; stores: boolean };
+  /** The catalog column that trends are read on, such as "style"; null when the catalog has no attributes. */
+  trendBy: string | null;
 }
 
 export async function loadDashboard(): Promise<Dashboard> {
@@ -24,6 +29,7 @@ export async function loadDashboard(): Promise<Dashboard> {
 }
 
 export function buildModel(d: Dashboard): Model {
+  setCurrency(d.meta.currency);
   const pairs = new Map<number, Pair>();
   d.pairs.forEach((p) => pairs.set(p.s * 10000 + p.k, p));
   const stores = new Map<string, number>();
@@ -39,17 +45,27 @@ export function buildModel(d: Dashboard): Model {
     storeIndex: (v) => stores.get(v.toLowerCase()) ?? -1,
     skuIndex: (v) => skus.get(v.toLowerCase()) ?? -1,
     weeks: d.network.weeks,
+    has: {
+      stock: d.meta.hasStock,
+      stockHistory: d.meta.hasStockHistory,
+      map: d.meta.hasMap,
+      buzz: d.meta.hasBuzz,
+      transfers: d.meta.canTransfer,
+      truth: d.meta.simulated,
+      stores: d.stores.length > 1,
+    },
+    trendBy: d.meta.trendAttribute,
   };
 }
 
-/** Tool output writes rupees as "Rs"; the interface shows the rupee sign. */
-export const rupees = (text: string): string => text.replace(/Rs\s?/g, "₹");
-
 /**
  * Navigate to a view. Routes are plain hash names made of letters, digits and hyphens
- * (#plan, #forecast-KOR-OUT-018) so they survive any host that restricts URL fragments.
+ * (#plan, #forecast-2-17, where the numbers are the store and product positions) so they survive any host that restricts URL fragments.
  */
 export function go(path: string): void {
   window.location.hash = path.replace(/^\//, "").replace(/\//g, "-");
   window.scrollTo({ top: 0 });
 }
+
+/** Open the forecast of one product in one store. */
+export const openPair = (s: number, k: number): void => go(`/forecast/${s}/${k}`);

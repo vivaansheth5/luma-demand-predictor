@@ -1,7 +1,7 @@
 import numpy as np
 
-from demand_agent.signals.anomaly import detect_anomalies, expected_series, robust_z
-from demand_agent.signals.trends import benjamini_hochberg, detect_trends, mann_kendall, theil_sen
+from luma.signals.anomaly import detect_anomalies, expected_series, robust_z
+from luma.signals.trends import benjamini_hochberg, detect_trends, mann_kendall, theil_sen
 
 
 def test_mann_kendall_detects_monotone_series():

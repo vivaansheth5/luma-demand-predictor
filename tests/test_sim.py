@@ -1,8 +1,8 @@
 import numpy as np
 
-from demand_agent.data.panel import Panel
-from demand_agent.inventory.engine import Decision, InventoryState, run_inventory
-from demand_agent.sim.world import generate_world
+from luma.data.panel import Panel
+from luma.inventory.engine import Decision, InventoryState, run_inventory
+from luma.sim.world import generate_world
 
 
 def test_world_is_deterministic(settings, world):

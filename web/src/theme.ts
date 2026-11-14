@@ -1,22 +1,22 @@
 // Chart colours. Each one has a single job (see docs/design.md):
 //   accent  - the agent and its forecast
 //   counter - the opposite pole in diverging charts, and a second series when one is needed
-//   third   - a third series, used once (simulator truth)
+//   third   - a third series, kept in reserve
 //   quiet   - context: the status quo, reference methods, observed sales
 // The accent/counter/third trio passes the colour-vision checks on a white surface
 // (all-pairs deuteranopia and protanopia separation, 3:1 contrast).
 export const color = {
-  accent: "#A3223C",
-  counter: "#2E6FB7",
-  third: "#C98500",
-  quiet: "#A39A9D",
-  ink: "#1C1114",
-  secondary: "#5E5357",
-  muted: "#8D8387",
-  grid: "#ECE7E9",
-  axis: "#CFC7CA",
+  accent: "#4338CA",
+  counter: "#C2500C",
+  third: "#00917A",
+  quiet: "#A09FB0",
+  ink: "#17162B",
+  secondary: "#57566B",
+  muted: "#8A899C",
+  grid: "#EAEAF0",
+  axis: "#CBCAD8",
   surface: "#FFFFFF",
-  maroon: "#6E1423",
+  brand: "#2A2473",
   good: "#0C8A0C",
   warning: "#B97A00",
   critical: "#C7362F",
@@ -62,13 +62,13 @@ function mix(from: string, to: string, t: number): string {
   return oklabToHex([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]);
 }
 
-const LIGHT = "#F7ECEE";
-const NEUTRAL = "#EFEBEC";
+const LIGHT = "#EEEDFB";
+export const NEUTRAL = "#ECEBF0";
 
-/** Sequential ramp for magnitude (stockout risk): one hue, pale to brand maroon. t in 0..1. */
-export const riskColor = (t: number): string => mix(LIGHT, color.maroon, Math.min(1, Math.max(0, t)));
+/** Sequential ramp for magnitude (stockout risk): one hue, pale to brand indigo. t in 0..1. */
+export const riskColor = (t: number): string => mix(LIGHT, color.brand, Math.min(1, Math.max(0, t)));
 
-/** Diverging ramp around a neutral midpoint. t in -1..1: blue below, maroon above. */
+/** Diverging ramp around a neutral midpoint. t in -1..1: ember below, indigo above. */
 export function divergingColor(t: number): string {
   const c = Math.min(1, Math.max(-1, t));
   return c >= 0 ? mix(NEUTRAL, color.accent, c) : mix(NEUTRAL, color.counter, -c);

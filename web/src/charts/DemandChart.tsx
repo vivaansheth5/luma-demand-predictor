@@ -27,6 +27,7 @@ export function DemandChart({
   height = 300,
   salesAsBars = false,
   demandLabel = "Demand",
+  showDemand = true,
   startAt = 0,
 }: {
   weeks: string[];
@@ -37,6 +38,8 @@ export function DemandChart({
   height?: number;
   salesAsBars?: boolean;
   demandLabel?: string;
+  /** Draw the demand line. Turn off when demand equals sales and the bars already show it. */
+  showDemand?: boolean;
   /** First history week to draw; earlier weeks are before the product went on sale. */
   startAt?: number;
 }) {
@@ -86,7 +89,7 @@ export function DemandChart({
             i < nHist ? (
               <>
                 <div className="tt-title">{title}</div>
-                <TipRow color="#fff" label={demandLabel} value={int(demand[i])} />
+                {showDemand && <TipRow color="#fff" label={demandLabel} value={int(demand[i])} />}
                 {sales && <TipRow color={color.quiet} label="Sales" value={int(sales[i])} />}
                 {sales && demand[i] - sales[i] >= 1 && (
                   <div className="tt-note">{int(demand[i] - sales[i])} units lost to stockouts</div>
@@ -95,7 +98,7 @@ export function DemandChart({
             ) : (
               <>
                 <div className="tt-title">{title}, forecast</div>
-                <TipRow color="#E58DA0" label="Expected" value={int(forecast.mean[i - nHist])} />
+                <TipRow color="#A5A0EC" label="Expected" value={int(forecast.mean[i - nHist])} />
                 <div className="tt-note">
                   80% interval {int(forecast.p10[i - nHist])} to {int(forecast.p90[i - nHist])}
                 </div>
@@ -139,7 +142,7 @@ export function DemandChart({
             )}
             <path d={band(forecast.p10, forecast.p90)} fill={color.accent} opacity={0.11} />
             {forecast.p25 && forecast.p75 && <path d={band(forecast.p25, forecast.p75)} fill={color.accent} opacity={0.14} />}
-            <path d={histLine(demand) ?? ""} fill="none" stroke={color.ink} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            {showDemand && <path d={histLine(demand) ?? ""} fill="none" stroke={color.ink} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />}
             <path
               d={line<[number, number]>().x((d) => d[0]).y((d) => d[1])(meanPts) ?? ""}
               fill="none"

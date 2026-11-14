@@ -3,9 +3,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from demand_agent.agent.loop import run_llm, run_rules
-from demand_agent.agent.tools import Toolbox
-from demand_agent.agent.workspace import build_workspace
+from luma.agent.loop import ask, run_llm, run_rules
+from luma.agent.tools import Toolbox
+from luma.agent.workspace import build_workspace
 
 
 @pytest.fixture()
@@ -109,3 +109,31 @@ def test_llm_loop_drives_tools_and_returns_tool_results(ws):
     reply = client.calls[2]["messages"][-1]
     assert reply["role"] == "user" and reply["content"][0]["type"] == "tool_result"
     assert reply["content"][0]["tool_use_id"] == "toolu_2" and reply["content"][0]["is_error"] is True
+
+
+def test_ask_answers_with_tools_and_never_commits(ws):
+    run_rules(ws)
+    committed, draft = ws.committed, ws.draft
+    client = FakeClaude(
+        [
+            ("scan_trends", {}),
+            ("draft_plan", {"budget": 50_000.0}),  # a what-if must not replace the real plan
+            "Retro-sport is rising and a smaller budget would defer the slowest lines.",
+        ]
+    )
+    answer = ask(ws, "Which styles are rising, and what if the budget were 50,000?", client=client, model="test-model")
+    assert answer.text.startswith("Retro-sport") and [s.tool for s in answer.steps] == ["scan_trends", "draft_plan"]
+    assert "commit_plan" not in {t["name"] for t in client.calls[0]["tools"]}
+    assert client.calls[0]["messages"][0]["content"].endswith("what if the budget were 50,000?")
+    assert ws.committed is committed and ws.draft is draft
+
+
+def test_brief_names_a_product_that_dominates_the_forecast_change(ws):
+    from luma.agent.loop import _concentration
+
+    k = 0
+    one = ws.forecast.mean.copy()
+    one[:, k, :] *= 40.0  # one product now accounts for nearly all of a large increase
+    ws.forecast = replace(ws.forecast, mean=one)
+    note = _concentration(ws)
+    assert ws.panel.catalog["name"].iloc[k] in note and "Check that forecast" in note

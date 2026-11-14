@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { Sheet } from "../charts/base";
 import { StoreMap } from "../charts/StoreMap";
 import { Icon, Pager, StatusTag } from "../components/parts";
-import { go, rupees, type Model } from "../data";
-import { inr, int, pct } from "../format";
+import { openPair, type Model } from "../data";
+import { count, int, money, pct } from "../format";
 
 const PAGE = 12;
 
@@ -28,6 +28,22 @@ export function Plan({ m }: { m: Model }) {
   }, [plan.orders, store, only, query]);
   const moves = useMemo(() => plan.transfers.filter((t) => store === "All stores" || t.from === store || t.to === store), [plan.transfers, store]);
 
+  if (!m.has.stock) {
+    return (
+      <header className="view-head">
+        <h1>Add a stock table to get a plan</h1>
+        <p>
+          This run had sales and a catalog, which is enough for forecasts and trends. Add <code>stock.csv</code> with a row
+          for each product{m.has.stores ? ", store" : ""} and size and its units on hand, then run Luma again. It will
+          measure the stockout risk of every size, draft supplier orders within your budget
+          {m.has.stores ? ", and propose transfers between stores when you also give store coordinates" : ""}.
+        </p>
+        <p>
+          <a href="#signals">See the trends</a> or <a href="#forecast">open the forecasts</a> in the meantime.
+        </p>
+      </header>
+    );
+  }
   if (!s) {
     return (
       <header className="view-head">
@@ -51,11 +67,11 @@ export function Plan({ m }: { m: Model }) {
   return (
     <>
       <header className="view-head">
-        <h1>Tonight's plan</h1>
+        <h1>This week's plan</h1>
         <p>
-          Transfers go first because they land tomorrow morning. Supplier orders follow and take {d.meta.policy.leadTimeDays} days,
-          so each order has to cover {d.meta.policy.protectionDays} days of demand. Nothing is committed until it passes
-          every check below.
+          {m.has.transfers ? "Transfers go first because stock already in the business arrives soonest. " : ""}Supplier orders
+          take {d.meta.policy.leadTimeDays} days, so each order has to cover {d.meta.policy.protectionDays} days of demand.
+          Nothing is committed until it passes every check below.
         </p>
       </header>
 
@@ -65,18 +81,20 @@ export function Plan({ m }: { m: Model }) {
             <div>
               <dt>Supplier orders</dt>
               <dd>
-                {inr(s.supplier_orders.cost)} <small>{int(s.supplier_orders.units)} units</small>
+                {money(s.supplier_orders.cost)} <small>{int(s.supplier_orders.units)} units</small>
               </dd>
             </div>
-            <div>
-              <dt>Transfers between stores</dt>
-              <dd>
-                {int(s.transfers.units)} units <small>{s.transfers.lanes} trips</small>
-              </dd>
-            </div>
+            {m.has.transfers && (
+              <div>
+                <dt>Transfers between stores</dt>
+                <dd>
+                  {int(s.transfers.units)} units <small>{count(s.transfers.lanes, "trip")}</small>
+                </dd>
+              </div>
+            )}
             <div>
               <dt>Sales protected</dt>
-              <dd>{inr(s.expected_impact.revenue_protected)}</dd>
+              <dd>{money(s.expected_impact.revenue_protected)}</dd>
             </div>
             <div>
               <dt>Sizes likely to sell out</dt>
@@ -90,33 +108,35 @@ export function Plan({ m }: { m: Model }) {
                 {int(s.expected_impact.lost_units_14d[0])} to {int(s.expected_impact.lost_units_14d[1])} <small>units</small>
               </dd>
             </div>
-            <div>
-              <dt>Transfer cost and return</dt>
-              <dd>
-                {inr(s.transfers.cost)} <small>recovers {inr(s.transfers.expected_margin_recovered)} margin</small>
-              </dd>
-            </div>
+            {m.has.transfers && (
+              <div>
+                <dt>Transfer cost and return</dt>
+                <dd>
+                  {money(s.transfers.cost)} <small>recovers {money(s.transfers.expected_margin_recovered)} margin</small>
+                </dd>
+              </div>
+            )}
           </dl>
           <div style={{ marginTop: 18 }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "var(--secondary)", marginBottom: 6 }}>
-              <span>Weekly supplier budget used</span>
+              <span>Supplier budget used</span>
               <span className="num">
-                {inr(s.supplier_orders.cost)} of {inr(d.meta.policy.budget)}
+                {money(s.supplier_orders.cost)} of {money(d.meta.policy.budget)}
               </span>
             </div>
-            <div className="meter" role="img" aria-label={`${pct(used)} of the weekly budget used`}>
+            <div className="meter" role="img" aria-label={`${pct(used)} of the budget used`}>
               <i style={{ width: `${Math.min(100, 100 * used)}%` }} />
             </div>
             {s.supplier_orders.budget_binding && (
               <p className="note" style={{ marginTop: 10 }}>
-                Meeting every service target would cost {inr(s.supplier_orders.cost_without_budget)}. The agent kept the units with the
-                highest expected margin per rupee and deferred {inr(s.supplier_orders.cost_without_budget - s.supplier_orders.cost)}.
+                Meeting every service target would cost {money(s.supplier_orders.cost_without_budget)}. Luma kept the units with the
+                highest expected margin for their cost and deferred {money(s.supplier_orders.cost_without_budget - s.supplier_orders.cost)}.
               </p>
             )}
           </div>
         </Sheet>
 
-        <Sheet title="Checks the plan passed" subtitle="A failed check blocks the commit, and the agent has to redraft.">
+        <Sheet title="Checks the plan passed" subtitle="A failed check blocks the commit, and Luma has to redraft.">
           <ul className="checks">
             {plan.guardrails.map((g) => (
               <li key={g.check}>
@@ -124,7 +144,7 @@ export function Plan({ m }: { m: Model }) {
                   <Icon name={g.status === "pass" ? "check" : g.status === "warn" ? "warn" : "cross"} size={15} />
                 </span>
                 <div>
-                  <b>{g.check}</b> <span>{g.status === "warn" ? "Warning. " : ""}{rupees(g.detail)}</span>
+                  <b>{g.check}</b> <span>{g.status === "warn" ? "Warning. " : ""}{g.detail}</span>
                 </div>
               </li>
             ))}
@@ -139,15 +159,17 @@ export function Plan({ m }: { m: Model }) {
             {int(plan.orders.length - review.length)} lines approved automatically, {int(review.length)} waiting for a person
           </p>
         </div>
-        <div className="filters">
-          <div className="chips" role="group" aria-label="Store">
-            {["All stores", ...d.stores.map((st) => st.name)].map((name) => (
-              <button key={name} className="chip" aria-pressed={store === name} onClick={() => pick(name)}>
-                {name}
-              </button>
-            ))}
+        {m.has.stores && (
+          <div className="filters">
+            <div className="chips" role="group" aria-label="Store">
+              {["All stores", ...d.stores.map((st) => st.name)].map((name) => (
+                <button key={name} className="chip" aria-pressed={store === name} onClick={() => pick(name)}>
+                  {name}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <div className="filters">
           <div className="chips" role="group" aria-label="Approval">
             <button className="chip" aria-pressed={only === "all"} onClick={() => { setOnly("all"); setPage(0); }}>
@@ -177,7 +199,7 @@ export function Plan({ m }: { m: Model }) {
               </thead>
               <tbody>
                 {orders.slice(current * PAGE, current * PAGE + PAGE).map((o) => (
-                  <tr key={`${o.store}-${o.sku_id}`} className="clickable" onClick={() => go(`/forecast/${d.stores[m.storeIndex(o.store)].id}/${o.sku_id}`)}>
+                  <tr key={`${o.store}-${o.sku_id}`} className="clickable" onClick={() => openPair(Math.max(m.storeIndex(o.store), 0), Math.max(m.skuIndex(o.sku_id), 0))}>
                     <td>
                       <div className="cell-main">{o.product}</div>
                       <div className="cell-sub">
@@ -189,7 +211,7 @@ export function Plan({ m }: { m: Model }) {
                     <td className="num" style={{ whiteSpace: "nowrap" }}>
                       {Object.entries(o.sizes).map(([z, q]) => `${z} ${q}`).join(", ")}
                     </td>
-                    <td className="r">{inr(o.cost)}</td>
+                    <td className="r">{money(o.cost)}</td>
                     <td className="r" style={{ whiteSpace: "nowrap" }}>
                       {pct(o.risk_before)} to {pct(o.risk_after)}
                     </td>
@@ -199,7 +221,7 @@ export function Plan({ m }: { m: Model }) {
                       ) : (
                         <span title={o.review_reason ?? ""}>
                           <StatusTag status="warn">Needs approval</StatusTag>
-                          <div className="cell-sub" style={{ marginTop: 3, maxWidth: 190 }}>{rupees(o.review_reason ?? "")}</div>
+                          <div className="cell-sub" style={{ marginTop: 3, maxWidth: 190 }}>{o.review_reason ?? ""}</div>
                         </span>
                       )}
                     </td>
@@ -219,6 +241,7 @@ export function Plan({ m }: { m: Model }) {
         </div>
       </div>
 
+      {m.has.transfers && (
       <div className="block">
         <div className="block-head">
           <h2>Transfers</h2>
@@ -257,7 +280,7 @@ export function Plan({ m }: { m: Model }) {
                   {moves.length === 0 && (
                     <tr>
                       <td colSpan={7} className="note">
-                        No transfers touch this store tonight.
+                        No transfers touch this store in this plan.
                       </td>
                     </tr>
                   )}
@@ -266,11 +289,12 @@ export function Plan({ m }: { m: Model }) {
             </div>
             <Pager page={currentMove} pages={movePages} onPage={setMovePage} total={moves.length} noun="moves" />
           </Sheet>
-          <Sheet title="Lanes in use" subtitle={`${plan.lanes.length} rider trips. A trip carries at most 45 units.`}>
+          <Sheet title="Lanes in use" subtitle={`${count(plan.lanes.length, "lane")}. A trip carries at most ${d.meta.policy.laneCapacity} units.`}>
             <StoreMap stores={d.stores} lanes={plan.lanes} height={440} />
           </Sheet>
         </div>
       </div>
+      )}
 
       {d.overstock.length > 0 && (
         <div className="block">
@@ -292,14 +316,14 @@ export function Plan({ m }: { m: Model }) {
                 </thead>
                 <tbody>
                   {d.overstock.slice(0, 10).map((o) => (
-                    <tr key={`${o.s}-${o.k}`} className="clickable" onClick={() => go(`/forecast/${d.stores[o.s].id}/${o.sku_id}`)}>
+                    <tr key={`${o.s}-${o.k}`} className="clickable" onClick={() => openPair(o.s, o.k)}>
                       <td>
                         <div className="cell-main">{o.product}</div>
                         <div className="cell-sub">{o.store}</div>
                       </td>
                       <td className="r">{o.on_hand}</td>
                       <td className="r">{o.weeks_of_cover.toFixed(0)}</td>
-                      <td className="r">{inr(o.stock_value)}</td>
+                      <td className="r">{money(o.stock_value)}</td>
                       <td>{o.suggestion}</td>
                     </tr>
                   ))}

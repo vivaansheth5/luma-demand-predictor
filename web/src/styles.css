@@ -2,22 +2,22 @@
 
 :root {
   color-scheme: light;
-  --plane: #f3f1f2;
+  --plane: #f2f2f6;
   --surface: #ffffff;
-  --ink: #1c1114;
-  --secondary: #5e5357;
-  --muted: #8d8387;
-  --hairline: #e6e1e3;
-  --rule: #cfc7ca;
-  --maroon: #6e1423;
-  --maroon-deep: #4e0d18;
-  --tint: #f7ecee;
-  --accent: #a3223c;
-  --counter: #2e6fb7;
+  --ink: #17162b;
+  --secondary: #57566b;
+  --muted: #8a899c;
+  --hairline: #e4e3ec;
+  --rule: #cbcad8;
+  --brand: #2a2473;
+  --brand-deep: #1d1957;
+  --tint: #eeedfb;
+  --accent: #4338ca;
+  --counter: #c2500c;
   --good: #0c8a0c;
   --warning: #b97a00;
   --critical: #c7362f;
-  --serif: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --serif: "Fraunces Variable", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --sans: "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --page: 1240px;
@@ -61,7 +61,7 @@ input {
 }
 
 :focus-visible {
-  outline: 2px solid var(--maroon);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -100,10 +100,11 @@ input {
 
 .brand-mark {
   font-family: var(--serif);
-  font-size: 29px;
+  font-size: 26px;
+  font-weight: 560;
   line-height: 1;
-  color: var(--maroon);
-  letter-spacing: -0.01em;
+  color: var(--brand);
+  letter-spacing: -0.03em;
 }
 
 .brand-product {
@@ -138,7 +139,7 @@ input {
 }
 
 .nav a[aria-current="page"] {
-  color: var(--maroon);
+  color: var(--brand);
   background: var(--tint);
   font-weight: 550;
 }
@@ -165,9 +166,9 @@ input {
 .view-head h1 {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(34px, 3.6vw, 46px);
-  line-height: 1.08;
-  letter-spacing: -0.012em;
+  font-size: clamp(32px, 3.3vw, 42px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .view-head p {
@@ -287,7 +288,7 @@ input {
 }
 
 .linkish:hover {
-  color: var(--maroon);
+  color: var(--brand);
   text-decoration-color: currentColor;
 }
 
@@ -457,7 +458,7 @@ table.data tr.clickable {
 }
 
 table.data tr.clickable:hover td {
-  background: #faf7f8;
+  background: #f8f8fc;
 }
 
 table.data tr.emph td {
@@ -486,7 +487,7 @@ table.data tr.emph td {
   font-weight: 550;
   line-height: 1.5;
   white-space: nowrap;
-  background: #f1eeef;
+  background: #efeff4;
   color: var(--secondary);
 }
 
@@ -496,12 +497,12 @@ table.data tr.emph td {
 
 .tag.up {
   background: var(--tint);
-  color: var(--maroon);
+  color: var(--brand);
 }
 
 .tag.down {
-  background: #e9f0f8;
-  color: #1f5594;
+  background: #fbede3;
+  color: #9a3e08;
 }
 
 .tag.good {
@@ -542,8 +543,8 @@ table.data tr.emph td {
 }
 
 .chip[aria-pressed="true"] {
-  background: var(--maroon);
-  border-color: var(--maroon);
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 
@@ -581,8 +582,8 @@ table.data tr.emph td {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--maroon);
-  background: var(--maroon);
+  border: 1px solid var(--brand);
+  background: var(--brand);
   color: #fff;
   padding: 10px 18px;
   border-radius: 9px;
@@ -593,14 +594,14 @@ table.data tr.emph td {
 }
 
 .btn:hover {
-  background: var(--maroon-deep);
-  border-color: var(--maroon-deep);
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
 }
 
 .btn.ghost {
   background: transparent;
-  color: var(--maroon);
-  border-color: color-mix(in srgb, var(--maroon) 35%, transparent);
+  color: var(--brand);
+  border-color: color-mix(in srgb, var(--brand) 35%, transparent);
 }
 
 .btn.ghost:hover {
@@ -697,9 +698,9 @@ table.data tr.emph td {
   margin-top: 14px;
   font-family: var(--serif);
   font-weight: 400;
-  font-size: clamp(36px, 4.5vw, 60px);
-  line-height: 1.04;
-  letter-spacing: -0.016em;
+  font-size: clamp(34px, 4vw, 54px);
+  line-height: 1.07;
+  letter-spacing: -0.022em;
   text-wrap: balance;
 }
 
@@ -774,7 +775,7 @@ table.data tr.emph td {
 
 .finding-icon {
   margin-top: 5px;
-  color: var(--maroon);
+  color: var(--brand);
 }
 
 .finding h3 {
@@ -946,7 +947,7 @@ table.data tr.emph td {
 }
 
 .picker-list button:hover {
-  background: #faf7f8;
+  background: #f8f8fc;
 }
 
 .picker-list button[aria-current="true"] {
@@ -1029,14 +1030,14 @@ table.data tr.emph td {
 
 .step.kind-plan .step-n,
 .step.kind-commit .step-n {
-  background: var(--maroon);
-  border-color: var(--maroon);
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 
 .step.kind-check .step-n {
-  border-color: var(--maroon);
-  color: var(--maroon);
+  border-color: var(--brand);
+  color: var(--brand);
 }
 
 .step-thought {
@@ -1059,7 +1060,7 @@ table.data tr.emph td {
 .step-call code {
   font-family: var(--mono);
   font-size: 12px;
-  background: #ebe7e8;
+  background: #e9e9f0;
   color: var(--ink);
   padding: 2px 7px;
   border-radius: 5px;
@@ -1156,7 +1157,7 @@ table.data tr.emph td {
 
 .failure code {
   font-family: var(--mono);
-  background: #ebe7e8;
+  background: #e9e9f0;
   padding: 2px 7px;
   border-radius: 5px;
   color: var(--ink);

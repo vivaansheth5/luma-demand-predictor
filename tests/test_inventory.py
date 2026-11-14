@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from demand_agent.inventory.decide import decide
-from demand_agent.inventory.policy import classify_abc, plan_replenishment
-from demand_agent.models.pipeline import nb_ppf
+from luma.inventory.decide import decide
+from luma.inventory.policy import classify_abc, plan_replenishment
+from luma.models.pipeline import nb_ppf
 
 
 @pytest.fixture(scope="module")

@@ -3,8 +3,8 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from demand_agent.api.app import create_app
-from demand_agent.export import build_dashboard, write_outputs
+from luma.api.app import create_app
+from luma.export import build_dashboard, write_outputs
 
 
 @pytest.fixture(scope="module")
@@ -25,6 +25,10 @@ def test_dashboard_json_is_strict_and_complete(result, artifacts):
     assert len(pair["mean"]) == 4 and len(pair["stock"]) == 4
     assert all(lo <= hi for lo, hi in zip(pair["p10"], pair["p90"], strict=True))
     assert (artifacts / "orders.csv").read_text().startswith("store,")
+    meta = payload["meta"]
+    assert meta["simulated"] and meta["hasStock"] and meta["hasMap"] and meta["canTransfer"]
+    assert meta["currency"] == "INR" and meta["trendAttribute"] == "style" and "label" in meta["attributes"]
+    assert (artifacts / "trends.csv").read_text().startswith("attribute,") and (artifacts / "workspace.pkl").exists()
 
 
 def test_static_api(artifacts):
