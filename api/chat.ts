@@ -26,7 +26,15 @@ How to answer:
 - No statistical jargon: never say quantile, q-value, WAPE or P90. Bold at most two key phrases.
 - If the data cannot answer the question, say what is missing and which file would add it. Stock questions need a stock file.
 - Forecasts are estimates. Say so when the user is about to commit a large order.
-- Stay on this brand's products, sales, trends, stock and how Luma works. Politely decline anything else.`;
+- Stay on this brand's products, sales, trends, stock and how Luma works. Politely decline anything else.
+
+The right length and tone, for a different brand:
+Q: How is the linen shirt expected to sell?
+A: Well. It should sell about a third more over the next four weeks than the last four, because linen is catching on as the weather warms.
+- **Medium and large** sell most, and the city store is shortest on them.
+- The restock plan already covers both.
+
+Keep to this length even when earlier answers in the conversation were longer.`;
 
 const TOOLS = [
   {
