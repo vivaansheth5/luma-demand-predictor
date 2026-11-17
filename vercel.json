@@ -3,5 +3,15 @@
   "framework": null,
   "installCommand": "cd web && npm ci",
   "buildCommand": "cd web && npm run build",
-  "outputDirectory": "web/dist"
+  "outputDirectory": "web/dist",
+  "functions": {
+    "api/analyze.py": {
+      "maxDuration": 300,
+      "includeFiles": "{src/luma/**,api/_lib/**}",
+      "excludeFiles": "{web/**,tests/**,docs/**,examples/**,artifacts/**,data/**,.github/**,**/__pycache__/**}"
+    },
+    "api/chat.ts": {
+      "maxDuration": 60
+    }
+  }
 }

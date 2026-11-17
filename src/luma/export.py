@@ -10,7 +10,7 @@ import pandas as pd
 
 from luma.agent.tools import Toolbox, driver_effects
 from luma.config import QUANTILES, WINDOWS
-from luma.data.panel import save_json
+from luma.data.panel import parquet_available, save_json
 from luma.models.pipeline import nb_sf
 from luma.run import PipelineResult
 from luma.signals.anomaly import expected_series
@@ -400,7 +400,7 @@ def write_outputs(res: PipelineResult, folder: Path, brand: str | None = None) -
     folder.mkdir(parents=True, exist_ok=True)
     paths = {
         "dashboard": folder / "dashboard.json",
-        "forecast": folder / "forecast.parquet",
+        "forecast": folder / ("forecast.parquet" if parquet_available() else "forecast.csv"),
         "trends": folder / "trends.csv",
         "orders": folder / "orders.csv",
         "transfers": folder / "transfers.csv",
@@ -409,7 +409,11 @@ def write_outputs(res: PipelineResult, folder: Path, brand: str | None = None) -
     }
     payload = build_dashboard(res, brand)
     save_json(paths["dashboard"], payload)
-    forecast_table(res).to_parquet(paths["forecast"], index=False)
+    table = forecast_table(res)
+    if paths["forecast"].suffix == ".parquet":
+        table.to_parquet(paths["forecast"], index=False)
+    else:
+        table.to_csv(paths["forecast"], index=False)
     trend_table(res).to_csv(paths["trends"], index=False)
     res.workspace.save(paths["workspace"])
     plan = res.workspace.committed or {"orders": [], "transfers": []}

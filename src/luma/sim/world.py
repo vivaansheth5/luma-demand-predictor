@@ -71,7 +71,7 @@ class Truth:
             buzz=self.buzz.astype(np.float32),
             history_days=np.array(self.history_days),
         )
-        self.weather.to_parquet(folder / "truth_weather.parquet", index=False)
+        self.weather.to_csv(folder / "truth_weather.csv", index=False)
         save_json(folder / "truth_anomalies.json", self.anomalies)
 
     @classmethod
@@ -85,7 +85,9 @@ class Truth:
             size_share=z["size_share"].astype(float),
             trend=z["trend"].astype(float),
             buzz=z["buzz"].astype(float),
-            weather=pd.read_parquet(folder / "truth_weather.parquet"),
+            weather=pd.read_csv(folder / "truth_weather.csv", parse_dates=["date"])
+            if (folder / "truth_weather.csv").exists()
+            else pd.read_parquet(folder / "truth_weather.parquet"),
             anomalies=json.loads((folder / "truth_anomalies.json").read_text()),
             history_days=int(z["history_days"]),
         )
@@ -97,7 +99,7 @@ class World:
     panel: Panel
     truth: Truth
 
-    def save(self, folder: Path, fmt: str = "parquet") -> None:
+    def save(self, folder: Path, fmt: str | None = None) -> None:
         self.panel.save(folder, fmt)
         self.truth.save(folder / "truth")
 

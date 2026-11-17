@@ -227,7 +227,7 @@ def trends(
 @app.command()
 def simulate(
     out: Path = typer.Option(Path("data"), help="Folder for the simulated tables."),
-    csv: bool = typer.Option(False, help="Write CSV files, not Parquet."),
+    csv: bool = typer.Option(False, help="Write CSV files, not Parquet (CSV is the default without pyarrow)."),
     small: bool = typer.Option(False),
     seed: int | None = typer.Option(None),
 ) -> None:
@@ -235,7 +235,7 @@ def simulate(
     from luma.sim.world import generate_world
 
     world = generate_world(_settings(small, seed).sim)
-    world.save(out, "csv" if csv else "parquet")
+    world.save(out, "csv" if csv else None)
     p = world.panel
     console.print(
         f"Wrote {p.n_days} days, {p.n_stores} stores and {p.n_skus} products to {out}/ "
@@ -265,9 +265,13 @@ def serve(
     small: bool = typer.Option(False, help="With --live, use the tiny world."),
 ) -> None:
     """Serve the dashboard and the JSON API."""
-    import uvicorn
+    try:
+        import uvicorn
 
-    from luma.api.app import create_app
+        from luma.api.app import create_app
+    except ImportError as err:
+        console.print('The server needs the api extra: [bold]pip install -e ".[api]"[/bold]')
+        raise typer.Exit(1) from err
 
     result = None
     if live:

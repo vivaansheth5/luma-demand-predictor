@@ -227,9 +227,10 @@ class Panel:
             frames["stock"] = stock
         return frames
 
-    def save(self, folder: Path, fmt: str = "parquet") -> None:
-        """Write the tables as Parquet or CSV files."""
+    def save(self, folder: Path, fmt: str | None = None) -> None:
+        """Write the tables as Parquet or CSV files (Parquet by default when pyarrow is installed)."""
         folder.mkdir(parents=True, exist_ok=True)
+        fmt = fmt or ("parquet" if parquet_available() else "csv")
         for name, frame in self.to_frames().items():
             if fmt == "csv":
                 frame.to_csv(folder / f"{name}.csv", index=False)
@@ -248,6 +249,15 @@ class Panel:
         from luma.data.loader import build_panel
 
         return build_panel(frames)
+
+
+def parquet_available() -> bool:
+    """True when pyarrow is installed (the ``parquet`` extra)."""
+    try:
+        import pyarrow  # noqa: F401
+    except ImportError:
+        return False
+    return True
 
 
 def clean_json(obj: object) -> object:

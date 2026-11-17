@@ -189,6 +189,8 @@ def build_panel(
     currency: str | None = None,
     attributes: list[str] | None = None,
     trend_attribute: str | None = None,
+    max_days: int | None = None,
+    max_pairs: int | None = None,
 ) -> Panel:
     """Build a panel from tables.
 
@@ -200,6 +202,9 @@ def build_panel(
     attributes : catalogue columns to treat as product attributes. Default: every text column
         with between 2 and 40 distinct values.
     trend_attribute : the attribute the buzz table is keyed by. Default "style" when present.
+    max_days : keep only the most recent days of sales history.
+    max_pairs : refuse data with more product and store pairs than this, before any large array
+        is built.
     """
     frames = {k.lower(): v for k, v in frames.items()}
     for needed in ("sales", "catalog"):
@@ -216,6 +221,8 @@ def build_panel(
     sales["date"] = pd.to_datetime(sales["date"], errors="coerce")
     if sales["date"].isna().any():
         raise DataError("the sales table has dates that could not be read")
+    if max_days is not None and "start" not in meta:
+        sales = sales[sales["date"] > sales["date"].max() - pd.Timedelta(days=max_days)]
     start = date.fromisoformat(str(meta["start"])) if "start" in meta else sales["date"].min().date()
     day0 = np.datetime64(start, "D")
     t = (sales["date"].to_numpy().astype("datetime64[D]") - day0).astype(np.int64)
@@ -247,6 +254,14 @@ def build_panel(
         # No cost supplied: assume a 55% gross margin so that margins and budgets can be computed.
         catalog["unit_cost"] = (catalog["price"] * 0.45).round(2)
     sku_ids = list(catalog["sku_id"])
+    if max_pairs is not None:
+        n_stores = len(frames["stores"]) if "stores" in frames else sales["store_id"].nunique()
+        if n_stores * len(sku_ids) > max_pairs:
+            raise DataError(
+                f"the data has {len(sku_ids):,} products in {n_stores:,} store(s), {n_stores * len(sku_ids):,} "
+                f"pairs in all; this version handles up to {max_pairs:,}. Upload your best sellers, or run Luma "
+                "on your own computer for the full catalog"
+            )
     k = _codes(sales["sku_id"], sku_ids, "sku_id", "sales")
     if "launch_day" not in catalog.columns:
         if "launch_date" in catalog.columns:
