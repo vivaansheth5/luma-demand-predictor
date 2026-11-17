@@ -295,4 +295,4 @@ docs/           methods and design notes
 - Lead time is one number for every product. Minimum order quantities and returns are not modelled.
 - The 80% interval covers about 76% of outcomes on the demo, because low quantiles run high on slow sellers. Upper quantiles, which drive stock decisions, are on target.
 - Arrays are dense over days, stores, products and sizes. Luma has been run at 800 product and store pairs; a very large catalog will need a sparse layout first.
-- The Claude planner and `luma ask` are tested against a scripted client that follows the Messages API shape. They have not yet been run against the live API.
+- The website's chat runs on the live Claude API. The command-line Claude modes (`luma run --mode llm` and `luma ask`) are tested only against a scripted client that follows the Messages API shape.
