@@ -137,3 +137,17 @@ def test_analyze_refuses_what_one_call_cannot_handle(shopify_exports):
         build_panel(tables, max_pairs=10)
     trimmed = build_panel(tables, max_days=120)
     assert trimmed.n_days == 120
+
+
+def test_big_uploads_keep_less_history_to_finish_in_time(shopify_exports, monkeypatch):
+    import luma.web
+
+    orders, products, _ = shopify_exports
+    tables, _ = shopify.convert(orders, products)
+    pairs = tables["sales"]["store_id"].nunique() * len(tables["catalog"])
+    monkeypatch.setattr(luma.web, "WORK_BUDGET", pairs * 150)
+    payload = analyze({"sales": _csv(tables["sales"]), "catalog": _csv(tables["catalog"])})
+    assert payload["meta"]["counts"]["days"] == 150 and payload["meta"]["upload"]["historyTrimmedToDays"] == 150
+    monkeypatch.setattr(luma.web, "WORK_BUDGET", pairs * 50)
+    with pytest.raises(DataError, match="more than one analysis here can handle"):
+        analyze({"sales": _csv(tables["sales"]), "catalog": _csv(tables["catalog"])})

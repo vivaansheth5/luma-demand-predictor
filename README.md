@@ -24,7 +24,7 @@ How the site is built:
 
 - **Analysis.** The browser compresses the files and sends them to a Python function ([`api/analyze.py`](api/analyze.py)). It runs the same pipeline as the command line, with lighter settings (three replayed dates and 70% of the trees), and returns the analysis. Nothing is written to disk or kept.
 - **Chat.** The analysis stays in the browser. Each question goes to [`api/chat.ts`](api/chat.ts), which adds a fixed system prompt and eleven tool definitions and calls Claude. When Claude asks for a tool, the browser runs it on the analysis ([`web/src/agent/tools.ts`](web/src/agent/tools.ts)) and sends back the result, until Claude answers. The API key never reaches the browser, and a brand's data reaches Claude only as the small tool results it asks for.
-- **Limits.** Up to 2,000 product and store pairs, the most recent two years of sales, and 4.3 MB of compressed upload per analysis. Chat is rate-limited per visitor.
+- **Limits.** Up to 2,000 product and store pairs and 4.3 MB of compressed upload per analysis. History is capped at two years, and shortened for large catalogs so that an analysis finishes within the 300-second function limit (400 pairs over a year takes about 85 seconds). Chat is rate-limited per visitor.
 
 ### Deploy your own copy
 
@@ -282,7 +282,7 @@ src/luma/
   data/shopify.py  reads Shopify's order and product exports
 api/            Vercel functions: analyze.py (Python) and chat.ts (Claude relay)
 web/            React and TypeScript website: home, upload, chat and the report
-tests/          59 tests: leakage, conservation, calibration, feasibility, own data, Shopify exports, agent behaviour
+tests/          60 tests: leakage, conservation, calibration, feasibility, own data, Shopify exports, agent behaviour
 docs/           methods and design notes
 ```
 

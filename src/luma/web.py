@@ -15,13 +15,16 @@ import pandas as pd
 
 from luma.config import Settings
 from luma.data import shopify
-from luma.data.loader import DataError, build_panel
+from luma.data.loader import MIN_DAYS, DataError, build_panel
 from luma.data.panel import clean_json
 from luma.export import build_dashboard
 from luma.run import policy_for, run_pipeline
 
-MAX_PAIRS = 2000  # product and store pairs; about a minute of training on one core at 800
+MAX_PAIRS = 2000  # product and store pairs
 MAX_DAYS = 730  # the most recent two years are kept
+# Training time grows with pairs times days: 400 pairs over 365 days took 83 seconds on one
+# serverless core. The budget keeps every analysis near three minutes, inside the 300-second limit.
+WORK_BUDGET = 300_000
 TABLES = ("sales", "catalog", "stock", "stores", "events", "discounts", "weather", "buzz")
 SHOPIFY = ("shopify_orders", "shopify_products")
 
@@ -70,13 +73,18 @@ def analyze(
         currency = currency or report.get("currency")
     elif "shopify_products" in frames:
         raise DataError("add the Shopify orders export too: the products export alone has no sales")
-    panel = build_panel(
-        frames,
-        currency=(currency or "USD").upper(),
-        lead_time=lead_time,
-        max_days=MAX_DAYS,
-        max_pairs=MAX_PAIRS,
-    )
+    options = {"currency": (currency or "USD").upper(), "lead_time": lead_time, "max_pairs": MAX_PAIRS}
+    panel = build_panel(frames, max_days=MAX_DAYS, **options)
+    pairs = panel.n_stores * panel.n_skus
+    if pairs * panel.n_days > WORK_BUDGET:
+        days = WORK_BUDGET // pairs
+        if days < MIN_DAYS:
+            raise DataError(
+                f"{pairs:,} product and store pairs is more than one analysis here can handle; upload up to "
+                f"{WORK_BUDGET // MIN_DAYS:,} (your best sellers, or fewer stores), or run Luma on your own computer"
+            )
+        panel = build_panel(frames, max_days=days, **options)
+        report["historyTrimmedToDays"] = int(days)
     settings = web_settings()
     settings = replace(settings, policy=policy_for(panel, settings.policy))
     result = run_pipeline(settings, panel=panel)
