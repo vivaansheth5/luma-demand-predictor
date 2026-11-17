@@ -2,9 +2,11 @@
 
 An open-source agent that forecasts fashion demand for every product, store and size, finds the trends that are starting to move, and turns both into the week's stock decisions. Point it at a sales export and a catalog.
 
+**Try it: [luma-forecast.vercel.app](https://luma-forecast.vercel.app)**, with a sample store or your own sales. Free, no account.
+
 [Methods](docs/methods.md) · [Design notes](docs/design.md)
 
-![Luma's weekly brief](docs/img/brief.png)
+![Luma's website](docs/img/site.png)
 
 ## Why it exists
 
@@ -13,6 +15,20 @@ An open-source agent that forecasts fashion demand for every product, store and 
 **The approach.** Luma reads the sales history, corrects it for stockouts, and forecasts each product in each store as a range, not a single number. It tests every catalog attribute (style, colour, fit, fabric, whatever the catalog holds) for a share of demand that is rising or fading beyond chance. An agent then works through the result with tools: it checks anomalies, measures stockout risk by size, drafts supplier orders within a budget, proposes transfers between stores, and commits a plan only when it passes every check.
 
 **Why that solves it.** Each decision is tied to a measured probability, so stock goes where demand is both likely and uncertain. Each forecast is replayed on past dates and scored, so a brand can see how far to trust it before acting. Each step the agent takes is recorded, so a person can audit the plan and overrule it.
+
+## Use the website
+
+Open [luma-forecast.vercel.app](https://luma-forecast.vercel.app). Try the sample store, or upload your own sales: Shopify's orders export (plus the products export, if you have it) works as it is, and so does any CSV with a date, product, size and quantity on each row. Luma analyses the files in about a minute, then you ask it questions in plain words.
+
+How the site is built:
+
+- **Analysis.** The browser compresses the files and sends them to a Python function ([`api/analyze.py`](api/analyze.py)). It runs the same pipeline as the command line, with lighter settings (three replayed dates and 70% of the trees), and returns the analysis. Nothing is written to disk or kept.
+- **Chat.** The analysis stays in the browser. Each question goes to [`api/chat.ts`](api/chat.ts), which adds a fixed system prompt and eleven tool definitions and calls Claude. When Claude asks for a tool, the browser runs it on the analysis ([`web/src/agent/tools.ts`](web/src/agent/tools.ts)) and sends back the result, until Claude answers. The API key never reaches the browser, and a brand's data reaches Claude only as the small tool results it asks for.
+- **Limits.** Up to 2,000 product and store pairs, the most recent two years of sales, and 4.3 MB of compressed upload per analysis. Chat is rate-limited per visitor.
+
+### Deploy your own copy
+
+Import the repository into Vercel; `vercel.json` sets up the build and both functions. Add an `ANTHROPIC_API_KEY` environment variable, and optionally `LUMA_MODEL` (default `claude-sonnet-5-5`). Set a monthly spend limit in the Anthropic console, because anyone with the link can chat.
 
 ## Quick start
 
@@ -226,7 +242,9 @@ Each part exists because a simpler version fails in a specific way.
 
 Formulas and parameters are in [docs/methods.md](docs/methods.md).
 
-## Dashboard
+## Report
+
+The website's Report tab is the full dashboard. To run it locally on your own run:
 
 ```bash
 cp artifacts/dashboard.json web/public/data/     # your run, or keep the committed demo
@@ -236,7 +254,7 @@ luma serve                                       # http://127.0.0.1:8000
 
 The dashboard is a static site that reads one file, `data/dashboard.json`. It adapts to the data: the plan, the map, transfers and the stockout views appear when the run had the tables behind them. `npm run dev` in `web/` starts a development server, and `npm run build:single` writes one self-contained HTML file with the data embedded.
 
-To host it, import the repository into Vercel: `vercel.json` already points the build at `web/`. Commit your own `dashboard.json` to `web/public/data/` to publish your run. The `Deploy dashboard` workflow does the same for GitHub Pages.
+`web/public/data/dashboard.json` is the sample store the website opens with; replace it to publish your own run. The `Deploy dashboard` workflow publishes the site to GitHub Pages without the upload and chat functions.
 
 | | |
 |---|---|
@@ -259,9 +277,12 @@ src/luma/
   agent/        tools, guardrails, rules planner, Claude planner, questions
   evaluation/   backtests, and closed-loop policy evaluation on the demo
   sim/          the simulated demo retailer
-  api/          FastAPI service
-web/            React and TypeScript dashboard
-tests/          53 tests: leakage, conservation, calibration, feasibility, own-data loading, agent behaviour
+  api/          FastAPI service for local use
+  web.py        the website's analysis entry point
+  data/shopify.py  reads Shopify's order and product exports
+api/            Vercel functions: analyze.py (Python) and chat.ts (Claude relay)
+web/            React and TypeScript website: home, upload, chat and the report
+tests/          59 tests: leakage, conservation, calibration, feasibility, own data, Shopify exports, agent behaviour
 docs/           methods and design notes
 ```
 

@@ -45,7 +45,7 @@ UNKNOWN_STOCK = 9999  # stock level assumed when daily stock is not recorded (ne
 STANDARD_SIZES = ("XXXS", "XXS", "XS", "S", "M", "L", "XL", "XXL", "2XL", "XXXL", "3XL", "4XL", "5XL")
 
 SYNONYMS: dict[str, tuple[str, ...]] = {
-    "date": ("date", "day", "order_date", "sale_date"),
+    "date": ("date", "day", "order_date", "sale_date", "created_at", "transaction_date"),
     "store_id": ("store_id", "store", "location", "location_id", "shop", "channel_id"),
     "sku_id": ("sku_id", "sku", "product_id", "item_id", "style_id", "article"),
     "size": ("size", "variant_size", "size_name"),
